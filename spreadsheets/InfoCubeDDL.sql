@@ -1,12 +1,12 @@
-create keyspace "infocube" 
-		with repliacation = 
-		{ 'class' : 'PortfolioStrategy',  'replication_factor' : 2}
+create keyspace "infocube"
+		with replication = 
+		{ 'class' : 'SimpleStrategy',  'replication_factor' : 1};
 
-CREATE TABLE INFORISK_Portfolio (  
+CREATE TABLE infocube.inforisk_Portfolio (  
 		PortfolioId int  PRIMARY KEY,
-		PortfolioName varchar )
+		PortfolioName varchar );
 		
-CREATE TABLE INFORISK_Trade (  
+CREATE TABLE infocube.inforisk_Trade (  
 		PortfolioId int  ,
 		TradeId int,
 		Quantity int,
@@ -15,17 +15,17 @@ CREATE TABLE INFORISK_Trade (
 		MarketValue float,
 		MarketValueUSD float,
 		Instrument int ,
-		PRIMARY KEY (PortfolioId, TradeId))
+		PRIMARY KEY (PortfolioId, TradeId));
 		
-CREATE TABLE INFORISK_Sensitivity (  
-		SensitivityID  int  PRIMARY KEY,
-		TradeID int,
+CREATE TABLE infocube.inforisk_Sensitivity (  
+		SensitivityId  int,
+		TradeId int,
 		SensitivityType  varchar,
-		InstrumentID  int,
+		InstrumentId  int,
 		SensitivityValue  float,
-		PRIMARY KEY (SensitivityID, TradeId))
+		PRIMARY KEY (SensitivityId, TradeId));
 		
-CREATE TABLE INFORISK_Instrument (  
+CREATE TABLE infocube.inforisk_Instrument (  
 		InstrumentId  int  PRIMARY KEY,
 		CUSIP  varchar,
 		SEDOL  varchar,
@@ -35,37 +35,37 @@ CREATE TABLE INFORISK_Instrument (
 		Symbol  varchar,
 		curve  varchar,
 		tenor  varchar,
-		currency  varchar )
+		currency  varchar );
 		
-CREATE TABLE INFORISK_Issuer (  
-		IssuerID int  PRIMARY KEY,
+CREATE TABLE infocube.inforisk_Issuer (  
+		IssuerId int  PRIMARY KEY,
 		IssuerLongName varchar,
 		IssuerShortName varchar,
 		IssuerRating int,
-		IssuerSector int )
+		IssuerSector int );
 		
-CREATE TABLE INFORISK_Rating ( 
-		RatingID int  PRIMARY KEY,
+CREATE TABLE infocube.inforisk_Rating ( 
+		RatingId int  PRIMARY KEY,
 		MoodyRating varchar,
 		SPrating varchar,
 		FitchRating varchar,
-		InternalRating varchar )
+		InternalRating varchar );
 		
-CREATE TABLE INFORISK_Sector ( 
-		SectorID int  PRIMARY KEY,
+CREATE TABLE infocube.inforisk_Sector ( 
+		SectorId int  PRIMARY KEY,
 		Level1 varchar,
 		Level2 varchar,
 		Level3 varchar,
-		Level4 varchar )
+		Level4 varchar );
 		
-CREATE TABLE INFORISK_TimeSeries ( 
-		TimeSeriesID int  PRIMARY KEY,
+CREATE TABLE infocube.inforisk_TimeSeries ( 
+		TimeSeriesId int  PRIMARY KEY,
 		Date Date,
-		DataValue float )
+		DataValue float );
 		
-CREATE TABLE INFORISK_TimeSeriesMapping ( 
-		TimeSeriesID int  PRIMARY KEY,
-		InstrumentID int,
+CREATE TABLE infocube.inforisk_TimeSeriesMapping ( 
+		TimeSeriesId int  PRIMARY KEY,
+		InstrumentId int,
 		Symbol varchar,
 		Type varchar,
 		Curve varchar,
@@ -73,13 +73,4 @@ CREATE TABLE INFORISK_TimeSeriesMapping (
 		Tenor varchar,
 		Mean float,
 		StdDev float,
-		Drift float )
-
-		
-
-
-
-
-
-
-		
+		Drift float );
