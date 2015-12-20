@@ -61,14 +61,18 @@ CREATE TABLE INFORISK_TimeSeries (
 		Date Date,
 		DataValue float )
 		
-CREATE TABLE INFORISK_TimeSeriesMapping (  
+CREATE TABLE INFORISK_TimeSeriesMapping ( 
 		TimeSeriesID int  PRIMARY KEY,
 		InstrumentID int,
 		Symbol varchar,
 		Type varchar,
 		Curve varchar,
 		Currency varchar,
-		Tenor varchar )
+		Tenor varchar,
+		Mean float,
+		StdDev float,
+		Drift float )
+
 		
 
 
