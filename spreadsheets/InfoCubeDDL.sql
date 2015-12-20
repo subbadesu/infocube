@@ -7,21 +7,23 @@ CREATE TABLE INFORISK_Portfolio (
 		PortfolioName varchar )
 		
 CREATE TABLE INFORISK_Trade (  
-		PortfolioId int   PRIMARY KEY,
+		PortfolioId int  ,
 		TradeId int,
 		Quantity int,
 		Notional float,
 		NotionalUSD float,
 		MarketValue float,
 		MarketValueUSD float,
-		Instrument int )
+		Instrument int ,
+		PRIMARY KEY (PortfolioId, TradeId))
 		
 CREATE TABLE INFORISK_Sensitivity (  
 		SensitivityID  int  PRIMARY KEY,
 		TradeID int,
 		SensitivityType  varchar,
 		InstrumentID  int,
-		SensitivityValue  float )
+		SensitivityValue  float,
+		PRIMARY KEY (SensitivityID, TradeId))
 		
 CREATE TABLE INFORISK_Instrument (  
 		InstrumentId  int  PRIMARY KEY,
