@@ -1,3 +1,4 @@
+--DROP KEYSPACE infocube;
 CREATE KEYSPACE IF NOT EXISTS infocube
 		with replication = 
 		{ 'class' : 'SimpleStrategy',  'replication_factor' : 1};
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS infocube.inforisk_Trade (
 		NotionalUSD double,
 		MarketValue double,
 		MarketValueUSD double,
-		Instrument int ,
+		InstrumentId int ,
 		PRIMARY KEY (PortfolioId, TradeId));
 		
 CREATE TABLE IF NOT EXISTS infocube.inforisk_Sensitivity (  
@@ -31,11 +32,13 @@ CREATE TABLE IF NOT EXISTS infocube.inforisk_Instrument (
 		SEDOL  varchar,
 		RIC  varchar,
 		ISIN  varchar,
-		Issuer  int,
+		IssuerId  int,
 		Symbol  varchar,
 		curve  varchar,
 		tenor  varchar,
 		currency  varchar );
+		
+CREATE INDEX Symbol on infocube.inforisk_Instrument(Symbol);
 		
 CREATE TABLE IF NOT EXISTS infocube.inforisk_Issuer (  
 		IssuerId int  PRIMARY KEY,
@@ -74,3 +77,25 @@ CREATE TABLE IF NOT EXISTS infocube.inforisk_TimeSeriesMapping (
 		Mean double,
 		StdDev double,
 		Drift double );
+		
+CREATE TABLE IF NOT EXISTS infocube.inforisk_historic (
+		InstrumentId int,
+		Date Date,
+		Symbol varchar,
+		AdjustedClosingPrice double,
+		PRIMARY KEY(InstrumentId, Date)		
+);		
+
+CREATE TABLE IF NOT EXISTS infocube.historical_prices (
+		ticker ascii, 
+		date timestamp, 
+		open decimal, 
+		high decimal, 
+		low decimal, 
+		close decimal, 
+		volume bigint, 
+		adj_close decimal, 
+		PRIMARY KEY (ticker, date)
+) WITH CLUSTERING ORDER BY (date DESC);
+
+		
