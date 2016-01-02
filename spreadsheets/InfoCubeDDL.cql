@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS infocube.inforisk_Instrument (
 		tenor  varchar,
 		currency  varchar );
 		
-CREATE INDEX Symbol on infocube.inforisk_Instrument(Symbol);
+CREATE INDEX IF NOT EXISTS Symbol on infocube.inforisk_Instrument(Symbol);
 		
 CREATE TABLE IF NOT EXISTS infocube.inforisk_Issuer (  
 		IssuerId int  PRIMARY KEY,
@@ -86,15 +86,15 @@ CREATE TABLE IF NOT EXISTS infocube.inforisk_historic (
 		PRIMARY KEY(InstrumentId, Date)		
 );		
 
-CREATE TABLE IF NOT EXISTS infocube.historical_prices (
-		ticker ascii, 
-		date timestamp, 
-		open decimal, 
-		high decimal, 
-		low decimal, 
-		close decimal, 
-		volume bigint, 
-		adj_close decimal, 
+CREATE TABLE IF NOT EXISTS infocube.inforisk_historical (
+		ticker varchar, 
+		date date, 
+		open double, 
+		high double, 
+		low double, 
+		close double, 
+		volume int, 
+		adj_close double, 
 		PRIMARY KEY (ticker, date)
 ) WITH CLUSTERING ORDER BY (date DESC);
 

@@ -22,10 +22,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import org.supercsv.io.CsvListReader;
 import org.supercsv.prefs.CsvPreference;
+
+import com.datastax.driver.core.LocalDate;
 
 import org.apache.cassandra.config.Config;
 import org.apache.cassandra.dht.Murmur3Partitioner;
@@ -46,16 +50,18 @@ public class BulkLoad {
     /** Keyspace name */
     public static final String KEYSPACE = "infocube";
     /** Table name */
-    public static final String TABLE = "historical_prices";
+    public static final String TABLE = "inforisk_historical";
+
+    public static final int daysAtEpoch = (int) Math.pow(2, 31);
 
     /**
      * Schema for bulk loading table. It is important not to forget adding
      * keyspace name before table name, otherwise CQLSSTableWriter throws
      * exception.
      */
-    public static final String SCHEMA = String.format("CREATE TABLE %s.%s (" + "ticker ascii, " + "date timestamp, "
-            + "open decimal, " + "high decimal, " + "low decimal, " + "close decimal, " + "volume bigint, "
-            + "adj_close decimal, " + "PRIMARY KEY (ticker, date) " + ") WITH CLUSTERING ORDER BY (date DESC)",
+    public static final String SCHEMA = String.format("CREATE TABLE %s.%s (" + "ticker varchar, " + "date date, "
+            + "open double, " + "high double, " + "low double, " + "close double, " + "volume int, "
+            + "adj_close double, " + "PRIMARY KEY (ticker, date) " + ") WITH CLUSTERING ORDER BY (date DESC)",
             KEYSPACE, TABLE);
 
     /**
@@ -118,9 +124,16 @@ public class BulkLoad {
                 while ((line = csvReader.read()) != null) {
                     // We use Java types here based on
                     // http://www.datastax.com/drivers/java/2.0/com/datastax/driver/core/DataType.Name.html#asJavaClass%28%29
-                    writer.addRow(ticker, DATE_FORMAT.parse(line.get(0)), new BigDecimal(line.get(1)),
-                            new BigDecimal(line.get(2)), new BigDecimal(line.get(3)), new BigDecimal(line.get(4)),
-                            Long.parseLong(line.get(5)), new BigDecimal(line.get(6)));
+                    Date dt = DATE_FORMAT.parse(line.get(0));
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(dt);
+                    LocalDate localDate = LocalDate.fromYearMonthDay(calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
+
+                    writer.addRow(ticker, daysAtEpoch + localDate.getDaysSinceEpoch(), new Double(line.get(1)),
+                            new Double(line.get(2)),
+                            new Double(line.get(3)),
+                            new Double(line.get(4)), Integer.parseInt(line.get(5)), new Double(line.get(6)));
                 }
             } catch (InvalidRequestException | ParseException | IOException e) {
                 e.printStackTrace();

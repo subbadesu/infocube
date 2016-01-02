@@ -205,4 +205,8 @@ public class Instrument {
 		this.currency = currency;
 	}
 
+    @Override
+    public String toString() {
+        return "Instrument Id: " + instrumentId + ", Symbol: " + symbol;
+    }
 }

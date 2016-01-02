@@ -176,5 +176,9 @@ public class Trade {
 		return null;
 	}
 	
+    @Override
+    public String toString() {
+        return "Trade Id: " + tradeId + ", Instrument Id: " + instrumentId + ", Quantity: " + quantity;
+    }
 	
 }

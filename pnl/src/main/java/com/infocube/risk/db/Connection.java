@@ -1,6 +1,8 @@
 package com.infocube.risk.db;
 
-public interface Connection {
+import java.io.Closeable;
+
+public interface Connection extends Closeable {
 
 	<T> ObjectStore<T> getObjectStore(Class<T> clazz);
 
