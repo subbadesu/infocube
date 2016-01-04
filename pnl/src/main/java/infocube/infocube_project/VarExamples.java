@@ -6,10 +6,10 @@ import com.infocube.risk.db.DbConnection;
 import com.infocube.risk.db.ObjectStore;
 import com.infocube.risk.entities.Instrument;
 import com.infocube.risk.entities.Trade;
-import com.infocube.risk.var.InstrumentVarCalculator;
-import com.infocube.risk.var.TradeVarCalculator;
 import com.infocube.risk.var.VarCalculator;
 import com.infocube.risk.var.VarContainer;
+import com.infocube.risk.var.historic.InstrumentVarCalculator;
+import com.infocube.risk.var.historic.TradeVarCalculator;
 
 public class VarExamples {
 

@@ -1,4 +1,4 @@
-package com.infocube.risk.var;
+package com.infocube.risk.var.historic;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,6 +28,9 @@ import com.infocube.risk.db.DbStore;
 import com.infocube.risk.db.ObjectStore;
 import com.infocube.risk.entities.HistoricalPrice;
 import com.infocube.risk.entities.Instrument;
+import com.infocube.risk.var.BaseVarContainer;
+import com.infocube.risk.var.VarCalculator;
+import com.infocube.risk.var.VarContainer;
 
 public class InstrumentVarCalculator implements VarCalculator {
 

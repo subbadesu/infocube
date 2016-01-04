@@ -1,4 +1,4 @@
-package com.infocube.risk.var;
+package com.infocube.risk.var.historic;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -8,6 +8,9 @@ import com.infocube.risk.db.DbConnection;
 import com.infocube.risk.db.ObjectStore;
 import com.infocube.risk.entities.Instrument;
 import com.infocube.risk.entities.Trade;
+import com.infocube.risk.var.BaseVarContainer;
+import com.infocube.risk.var.VarCalculator;
+import com.infocube.risk.var.VarContainer;
 
 public class TradeVarCalculator implements VarCalculator {
 
