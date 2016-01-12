@@ -1,49 +1,68 @@
 package com.infocube.risk.var;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.datastax.driver.core.LocalDate;
+
 public class BaseVarContainer implements VarContainer {
 
-    private List<Double> pnlVector;
+    private Map<LocalDate, Double> pnlVector;
+    private List<Double> sortedPnlValues;
     private int returnDays;
 
-    public BaseVarContainer(List<Double> pnlVector, int returnDays) {
+    public BaseVarContainer(Map<LocalDate, Double> pnlVector, int returnDays) {
         this.pnlVector = pnlVector;
         this.returnDays = returnDays;
+        this.sortedPnlValues = new ArrayList<>(pnlVector.values());
+        Collections.sort(sortedPnlValues);
     }
 
-    public BaseVarContainer(List<Double> pnlVector) {
+    public BaseVarContainer(Map<LocalDate, Double> pnlVector) {
         this(pnlVector, 1); // assume daily VaR by default
     }
 
     @Override
     public double getVaR(double confidenceLevel, int numDays) {
-        double valueAtRisk = 0.0;
+        double maxDailyLoss = 0.0;
+        double worseValue = 0.0;
         validateVaRParameters(confidenceLevel, numDays);
 
-        if (CollectionUtils.isNotEmpty(pnlVector)) {
-            int rank = (int) Math.round(pnlVector.size() * (1 - confidenceLevel));
-            valueAtRisk = pnlVector.get(rank) * Math.sqrt(numDays / returnDays);
+        if (CollectionUtils.isNotEmpty(sortedPnlValues)) {
+            int rank = (int) Math.round(sortedPnlValues.size() * (1 - confidenceLevel));
+            worseValue = sortedPnlValues.get(rank);
         }
 
-        return valueAtRisk;
+        Optional<Double> valueToday = pnlVector.values().stream().findFirst();
+        maxDailyLoss = worseValue - (valueToday != null ? valueToday.get() : 0.0);
+        double scalingFactor = Math.sqrt(numDays / returnDays);
+
+        double var = maxDailyLoss * scalingFactor;
+        return Math.abs(var);
     }
 
     @Override
     public double getExpectedShortFall(double confidenceLevel, int day) {
         double expectedShortFall = 0.0;
         validateVaRParameters(confidenceLevel, day);
-        if (CollectionUtils.isNotEmpty(pnlVector)) {
-            int rank = (int) Math.round(pnlVector.size() * (1 - confidenceLevel));
+        if (CollectionUtils.isNotEmpty(sortedPnlValues)) {
+            Optional<Double> valueTodayOptional = pnlVector.values().stream().findFirst();
+            double valueToday = valueTodayOptional != null ? valueTodayOptional.get() : 0.0;
+            int rank = (int) Math.round(sortedPnlValues.size() * (1 - confidenceLevel));
 
-            List<Double> pnlVectorAtAndBelowVaR = pnlVector.subList(0, rank);
-            double sumShortFall = pnlVectorAtAndBelowVaR.stream().reduce(0.0, (d1, d2) -> d1 + d2);
-            expectedShortFall = sumShortFall / (rank == 0 ? 1 : rank - 0);
+            List<Double> pnlVectorAtAndBelowVaR = sortedPnlValues.subList(0, rank);
+            double sumShortFall = pnlVectorAtAndBelowVaR.stream().reduce(0.0, (d1, d2) -> d1 + (d2 - valueToday));
+            double dailyExpectedShortFall = (sumShortFall / (rank == 0 ? 1 : rank));
+            double scalingFactor = day / returnDays;
+            expectedShortFall = dailyExpectedShortFall * scalingFactor;
         }
 
-        return expectedShortFall;
+        return Math.abs(expectedShortFall);
     }
 
     @Override
@@ -52,7 +71,7 @@ public class BaseVarContainer implements VarContainer {
     }
 
     @Override
-    public List<Double> getPnLVector() {
+    public Map<LocalDate, Double> getPnLVector() {
         return pnlVector;
     }
 

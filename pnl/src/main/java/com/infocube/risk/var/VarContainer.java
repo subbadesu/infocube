@@ -1,6 +1,8 @@
 package com.infocube.risk.var;
 
-import java.util.List;
+import java.util.Map;
+
+import com.datastax.driver.core.LocalDate;
 
 public interface VarContainer {
 
@@ -12,7 +14,7 @@ public interface VarContainer {
     /**
      * @return PnL Vector
      */
-    List<Double> getPnLVector();
+    Map<LocalDate, Double> getPnLVector();
 
     /**
      * @param confidenceLevel

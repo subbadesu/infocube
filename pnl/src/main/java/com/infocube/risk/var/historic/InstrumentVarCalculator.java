@@ -8,10 +8,12 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.cassandra.exceptions.InvalidRequestException;
 import org.supercsv.io.CsvListReader;
@@ -23,11 +25,13 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
+import com.infocube.risk.db.Connection;
+import com.infocube.risk.db.ConnectionProperties;
 import com.infocube.risk.db.DbConnection;
-import com.infocube.risk.db.DbStore;
 import com.infocube.risk.db.ObjectStore;
 import com.infocube.risk.entities.HistoricalPrice;
 import com.infocube.risk.entities.Instrument;
+import com.infocube.risk.utils.LocalDateComparator;
 import com.infocube.risk.var.BaseVarContainer;
 import com.infocube.risk.var.VarCalculator;
 import com.infocube.risk.var.VarContainer;
@@ -46,6 +50,7 @@ public class InstrumentVarCalculator implements VarCalculator {
     private VarContainer varContainer;
     private boolean useLatestClosingForToday;
     private boolean updateLatestPrice;
+    private Connection connection;
 
     public InstrumentVarCalculator(Instrument instrument) { // TODO: inject Connection
         this(instrument, DEFAULT_MAX_DAYS_FOR_RETURNS);
@@ -56,6 +61,16 @@ public class InstrumentVarCalculator implements VarCalculator {
     }
 
     public InstrumentVarCalculator(Instrument instrument, int maxDaysForReturns, boolean useLatestClosingForToday) {
+        this(new DbConnection(new ConnectionProperties()), instrument, maxDaysForReturns, useLatestClosingForToday);
+    }
+
+    public InstrumentVarCalculator(Connection connection, Instrument instrument, int maxDaysForReturns) {
+        this(connection, instrument, maxDaysForReturns, true);
+    }
+
+    public InstrumentVarCalculator(Connection connection, Instrument instrument, int maxDaysForReturns,
+            boolean useLatestClosingForToday) {
+        this.connection = connection;
         this.instrument = instrument;
         this.maxDaysForReturns = maxDaysForReturns;
         this.useLatestClosingForToday = useLatestClosingForToday;
@@ -65,15 +80,15 @@ public class InstrumentVarCalculator implements VarCalculator {
     public void compute(boolean refresh) {
         if (varContainer == null || refresh) {
             double priceToday = getPriceToday();
-            List<Double> dailyReturns = computeDailyReturns();
-            List<Double> pnlVector = new ArrayList<Double>(dailyReturns.size());
+            Map<LocalDate, Double> dailyReturns = computeDailyReturns();
+            Map<LocalDate, Double> pnlVector = new TreeMap<>(new LocalDateComparator());
 
             int day = 1;
-            for (Double dailyReturn : dailyReturns) {
-                double projectedPrice = priceToday * Math.exp(dailyReturn * day);
-                pnlVector.add(projectedPrice);
+            for (Entry<LocalDate, Double> dailyReturn : dailyReturns.entrySet()) {
+                LocalDate pnlDate = dailyReturn.getKey();
+                double projectedPrice = priceToday * Math.exp(dailyReturn.getValue() * day);
+                pnlVector.put(pnlDate, projectedPrice);
             }
-            Collections.sort(pnlVector);
 
             varContainer = new BaseVarContainer(pnlVector);
         }
@@ -84,25 +99,29 @@ public class InstrumentVarCalculator implements VarCalculator {
         return varContainer;
     }
 
-    private List<Double> computeDailyReturns() {
+    private Map<LocalDate, Double> computeDailyReturns() {
         String symbol = instrument.getSymbol();
-        List<Double> closingPrices = new ArrayList<>();
-        try (DbConnection dbConnection = new DbConnection(DBHOST_NAME, DBSCHEMA_NAME)) {
-            Session session = dbConnection.getSession();
-            Select selectStmt = QueryBuilder.select().column("date").column("adj_close")
-                    .from(DBSCHEMA_NAME, HISTORICAL_TABLE_NAME).where(QueryBuilder.eq("ticker", symbol))
-                    .limit(maxDaysForReturns);
-            ResultSet resultSet = session.execute(selectStmt);
+        Map<LocalDate, Double> closingPrices = new TreeMap<>(new LocalDateComparator());
+        
+        Session session = ((DbConnection) connection).getSession();
+        Select selectStmt = QueryBuilder.select().column("date").column("adj_close")
+                .from(DBSCHEMA_NAME, HISTORICAL_TABLE_NAME).where(QueryBuilder.eq("ticker", symbol))
+                .limit(maxDaysForReturns);
+        ResultSet resultSet = session.execute(selectStmt);
 
-            for (Row row : resultSet) {
-                closingPrices.add(row.getDouble("adj_close"));
-            }
+        for (Row row : resultSet) {
+            closingPrices.put(row.getDate("date"), row.getDouble("adj_close"));
         }
 
-        List<Double> dailyReturns = new ArrayList<>(closingPrices.size() - 1);
-        for (int i = 0; i < closingPrices.size(); i++) {
-            if (i + 1 < closingPrices.size()) {
-                dailyReturns.add(Math.log(closingPrices.get(i) / closingPrices.get(i + 1)));
+        Map<LocalDate, Double> dailyReturns = new HashMap<>();
+        List<LocalDate> closingDates = new ArrayList<>(closingPrices.keySet());
+        for (int i = 0; i < closingDates.size(); i++) {
+            if (i + 1 < closingDates.size()) {
+                LocalDate returnDate = closingDates.get(i);
+                LocalDate dayBefore = closingDates.get(i+1);
+                double priceToday = closingPrices.get(returnDate);
+                double priceDayBefore = closingPrices.get(dayBefore);
+                dailyReturns.put(returnDate, Math.log(priceToday/priceDayBefore));
             }
         }
 
@@ -155,11 +174,8 @@ public class InstrumentVarCalculator implements VarCalculator {
                 priceDateAndValue.second.doubleValue(), priceDateAndValue.second.doubleValue(), open.doubleValue(),
                 high.doubleValue(), low.doubleValue(), volume.intValue());
 
-        try (DbConnection dbConnection = new DbConnection(DBHOST_NAME, DBSCHEMA_NAME)) {
-            ObjectStore<HistoricalPrice> priceStore = dbConnection.getObjectStore(HistoricalPrice.class);
-            priceStore.save(historicalPrice);
-
-        }
+        ObjectStore<HistoricalPrice> priceStore = connection.getObjectStore(HistoricalPrice.class);
+        priceStore.save(historicalPrice);
     }
 
     private Pair<Date, Double> getPriceOnline(String symbol) {
@@ -200,15 +216,13 @@ public class InstrumentVarCalculator implements VarCalculator {
     }
 
     private Pair<LocalDate, Double> getLatestHistoricPrice(String symbol) {
-        try (DbConnection dbConnection = new DbConnection(DBHOST_NAME, DBSCHEMA_NAME)) {
-            Session session = dbConnection.getSession();
-            Select selectStmt = QueryBuilder.select().column("date").column("adj_close")
-                    .from(DBSCHEMA_NAME, HISTORICAL_TABLE_NAME).where(QueryBuilder.eq("ticker", symbol)).limit(1);
-            ResultSet resultSet = session.execute(selectStmt);
-            Row row = resultSet.one();
-            if (row != null) {
-                return new Pair<>(row.getDate("date"), row.getDouble("adj_close"));
-            }
+        Session session = ((DbConnection) connection).getSession();
+        Select selectStmt = QueryBuilder.select().column("date").column("adj_close")
+                .from(DBSCHEMA_NAME, HISTORICAL_TABLE_NAME).where(QueryBuilder.eq("ticker", symbol)).limit(1);
+        ResultSet resultSet = session.execute(selectStmt);
+        Row row = resultSet.one();
+        if (row != null) {
+            return new Pair<>(row.getDate("date"), row.getDouble("adj_close"));
         }
         return null;
     }

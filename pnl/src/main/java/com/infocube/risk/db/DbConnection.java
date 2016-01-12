@@ -1,10 +1,5 @@
 package com.infocube.risk.db;
 
-import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.MappingManager;
@@ -89,8 +84,7 @@ public class DbConnection implements Connection {
             } finally {
 
             }
-        }
- else if (session != null) {
+        } else if (session != null) {
             try {
                 session.close();
             } finally {
