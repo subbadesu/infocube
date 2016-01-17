@@ -17,12 +17,12 @@
     		 			var valueToPush = new Array();
     		 			valueToPush[0] = arrayElem.portfolioId;
     		 			valueToPush[1] = arrayElem.portfolioId;
-    		 			xyz.push(valueToPush);
+    		 			PnL.push(valueToPush);
     		 		        });
 
     		 		  });
   	
-    	var data = google.visualization.arrayToDataTable(xyz);
+    	var data = google.visualization.arrayToDataTable(PnL);
         var options = {
           title: 'ID PnL ',
           hAxis: {title: 'ID', minValue: 0, maxValue: 15},
