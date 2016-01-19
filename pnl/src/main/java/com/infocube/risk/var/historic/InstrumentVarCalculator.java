@@ -31,17 +31,16 @@ import com.infocube.risk.db.DbConnection;
 import com.infocube.risk.db.ObjectStore;
 import com.infocube.risk.entities.HistoricalPrice;
 import com.infocube.risk.entities.Instrument;
+import com.infocube.risk.utils.Constants;
 import com.infocube.risk.utils.LocalDateComparator;
+import com.infocube.risk.utils.Pair;
+import com.infocube.risk.utils.PriceUtils;
 import com.infocube.risk.var.BaseVarContainer;
 import com.infocube.risk.var.VarCalculator;
 import com.infocube.risk.var.VarContainer;
 
 public class InstrumentVarCalculator implements VarCalculator {
 
-    private static final String HISTORICAL_TABLE_NAME = "inforisk_historical";
-    private static final String DBSCHEMA_NAME = "infocube";
-    private static final String DBHOST_NAME = "localhost";
-    private static final int DEFAULT_MAX_DAYS_FOR_RETURNS = 252; // # of days available
     private static final String REALTIME_PRICE_QUOTE_CSV_URL = "http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s";
     private static final String REALTIME_FORMAT = "d1l1mov";
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
@@ -53,7 +52,7 @@ public class InstrumentVarCalculator implements VarCalculator {
     private Connection connection;
 
     public InstrumentVarCalculator(Instrument instrument) { // TODO: inject Connection
-        this(instrument, DEFAULT_MAX_DAYS_FOR_RETURNS);
+        this(instrument, Constants.DEFAULT_MAX_DAYS_FOR_RETURNS);
     }
 
     public InstrumentVarCalculator(Instrument instrument, int maxDaysForReturns) {
@@ -76,18 +75,22 @@ public class InstrumentVarCalculator implements VarCalculator {
         this.useLatestClosingForToday = useLatestClosingForToday;
     }
 
+    public InstrumentVarCalculator(Connection connection, Instrument instrument) {
+        this(connection, instrument, Constants.DEFAULT_MAX_DAYS_FOR_RETURNS);
+    }
+
     @Override
     public void compute(boolean refresh) {
         if (varContainer == null || refresh) {
             double priceToday = getPriceToday();
             Map<LocalDate, Double> dailyReturns = computeDailyReturns();
-            Map<LocalDate, Double> pnlVector = new TreeMap<>(new LocalDateComparator());
+            Map<Integer, Double> pnlVector = new TreeMap<>();
 
             int day = 1;
             for (Entry<LocalDate, Double> dailyReturn : dailyReturns.entrySet()) {
                 LocalDate pnlDate = dailyReturn.getKey();
                 double projectedPrice = priceToday * Math.exp(dailyReturn.getValue() * day);
-                pnlVector.put(pnlDate, projectedPrice);
+                pnlVector.put(pnlDate.getDaysSinceEpoch(), projectedPrice);
             }
 
             varContainer = new BaseVarContainer(pnlVector);
@@ -105,7 +108,7 @@ public class InstrumentVarCalculator implements VarCalculator {
         
         Session session = ((DbConnection) connection).getSession();
         Select selectStmt = QueryBuilder.select().column("date").column("adj_close")
-                .from(DBSCHEMA_NAME, HISTORICAL_TABLE_NAME).where(QueryBuilder.eq("ticker", symbol))
+                .from(Constants.DBSCHEMA_NAME, Constants.HISTORICAL_TABLE_NAME).where(QueryBuilder.eq("ticker", symbol))
                 .limit(maxDaysForReturns);
         ResultSet resultSet = session.execute(selectStmt);
 
@@ -130,7 +133,8 @@ public class InstrumentVarCalculator implements VarCalculator {
 
     private double getPriceToday() {
         String symbol = instrument.getSymbol();
-        Pair<LocalDate, Double> latestHistoricDateAndPrice = getLatestHistoricPrice(symbol);
+        Pair<LocalDate, Double> latestHistoricDateAndPrice = PriceUtils
+                .getLatestHistoricPrice((DbConnection) connection, symbol);
         if (useLatestClosingForToday) {
             if (latestHistoricDateAndPrice != null) {
                 return latestHistoricDateAndPrice.second;
@@ -215,17 +219,6 @@ public class InstrumentVarCalculator implements VarCalculator {
         return datePricePair;
     }
 
-    private Pair<LocalDate, Double> getLatestHistoricPrice(String symbol) {
-        Session session = ((DbConnection) connection).getSession();
-        Select selectStmt = QueryBuilder.select().column("date").column("adj_close")
-                .from(DBSCHEMA_NAME, HISTORICAL_TABLE_NAME).where(QueryBuilder.eq("ticker", symbol)).limit(1);
-        ResultSet resultSet = session.execute(selectStmt);
-        Row row = resultSet.one();
-        if (row != null) {
-            return new Pair<>(row.getDate("date"), row.getDouble("adj_close"));
-        }
-        return null;
-    }
 
     public int getMaxDaysForReturns() {
         return maxDaysForReturns;
@@ -234,15 +227,5 @@ public class InstrumentVarCalculator implements VarCalculator {
     public void setMaxDaysForReturns(int maxDaysForReturns) {
         this.maxDaysForReturns = maxDaysForReturns;
     }
-
-    static class Pair<T1, T2> {
-        T1 first;
-        T2 second;
-
-        public Pair(T1 first, T2 second) {
-            this.first = first;
-            this.second = second;
-        }
-    };
 
 }

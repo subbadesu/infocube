@@ -12,18 +12,18 @@ import com.datastax.driver.core.LocalDate;
 
 public class BaseVarContainer implements VarContainer {
 
-    private Map<LocalDate, Double> pnlVector;
+    private Map<Integer, Double> pnlVector;
     private List<Double> sortedPnlValues;
     private int returnDays;
 
-    public BaseVarContainer(Map<LocalDate, Double> pnlVector, int returnDays) {
+    public BaseVarContainer(Map<Integer, Double> pnlVector, int returnDays) {
         this.pnlVector = pnlVector;
         this.returnDays = returnDays;
         this.sortedPnlValues = new ArrayList<>(pnlVector.values());
         Collections.sort(sortedPnlValues);
     }
 
-    public BaseVarContainer(Map<LocalDate, Double> pnlVector) {
+    public BaseVarContainer(Map<Integer, Double> pnlVector) {
         this(pnlVector, 1); // assume daily VaR by default
     }
 
@@ -71,7 +71,7 @@ public class BaseVarContainer implements VarContainer {
     }
 
     @Override
-    public Map<LocalDate, Double> getPnLVector() {
+    public Map<Integer, Double> getPnLVector() {
         return pnlVector;
     }
 

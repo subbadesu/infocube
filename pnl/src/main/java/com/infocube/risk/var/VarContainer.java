@@ -14,7 +14,7 @@ public interface VarContainer {
     /**
      * @return PnL Vector
      */
-    Map<LocalDate, Double> getPnLVector();
+    Map<Integer, Double> getPnLVector();
 
     /**
      * @param confidenceLevel

@@ -46,26 +46,26 @@ public class PortfolioVarCalculator implements VarCalculator {
             tradeStore = connection.getObjectStore(Trade.class);
             if (tradeStore != null) {
                 List<Trade> trades = tradeStore.getAll(portfolioId);
-                Map<Trade, Map<LocalDate, Double>> tradePnlVector = new HashMap<>();
-                Set<LocalDate> allTradeDates = new TreeSet<>(new LocalDateComparator());
+                Map<Trade, Map<Integer, Double>> tradePnlVector = new HashMap<>();
+                Set<Integer> allTradeDates = new TreeSet<>();
                 for (Trade trade : trades) {
                     // parallelize this
-                    TradeVarCalculator tradeVarCalculator = new TradeVarCalculator(trade);
+                    TradeVarCalculator tradeVarCalculator = new TradeVarCalculator(connection, trade);
                     tradeVarCalculator.compute(refresh);
                     VarContainer varContainer = tradeVarCalculator.getVarContainer();
                     if (varContainer != null) {
-                        Map<LocalDate, Double> pnlVector = varContainer.getPnLVector();
+                        Map<Integer, Double> pnlVector = varContainer.getPnLVector();
                         tradePnlVector.put(trade, pnlVector);
                         allTradeDates.addAll(pnlVector.keySet());
                     }
                 }
 
-                Map<LocalDate, Double> portfolioPnlVector = new TreeMap<>(new LocalDateComparator());
-                for (LocalDate tradeDate : allTradeDates) {
+                Map<Integer, Double> portfolioPnlVector = new TreeMap<>();
+                for (Integer tradeDate : allTradeDates) {
                     double portfolioPnl = 0;
                     boolean atLeastOneTrade = false;
                     for (Trade trade : trades) {
-                        Map<LocalDate, Double> pnlVector = tradePnlVector.get(trade);
+                        Map<Integer, Double> pnlVector = tradePnlVector.get(trade);
                         Double tradePnl = pnlVector.get(tradeDate);
                         if (tradePnl != null) {
                             portfolioPnl += tradePnl;
