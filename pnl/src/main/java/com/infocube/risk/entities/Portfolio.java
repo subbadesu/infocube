@@ -40,5 +40,9 @@ public class Portfolio {
 		this.portfolioId = portfolioId;
 	}
 	
+    @Override
+    public String toString() {
+        return "Id: " + portfolioId + ", Name: " + portfolioName;
+    }
 	
 }

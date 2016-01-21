@@ -98,4 +98,12 @@ CREATE TABLE IF NOT EXISTS infocube.inforisk_historical (
 		PRIMARY KEY (ticker, date)
 ) WITH CLUSTERING ORDER BY (date DESC);
 
+CREATE TABLE IF NOT EXISTS infocube.inforisk_normal_parameters (
+		ticker varchar, 
+		date date,
+		mean double,
+		stddev double,
+		PRIMARY KEY (ticker, date)
+) WITH CLUSTERING ORDER BY (date DESC);
+
 		

@@ -1,6 +1,16 @@
 package com.infocube.risk.db;
 
+import java.util.List;
+
+import com.datastax.driver.core.ColumnMetadata;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.TableMetadata;
+import com.datastax.driver.core.querybuilder.Clause;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.driver.core.querybuilder.Select.Where;
 import com.datastax.driver.mapping.Mapper;
+import com.datastax.driver.mapping.Result;
 
 public class DbStore<T> implements ObjectStore<T> {
 	
@@ -10,29 +20,54 @@ public class DbStore<T> implements ObjectStore<T> {
 		this.mapper = mapper;
 	}
 
-	public void save(T entity) {
+	@Override
+    public void save(T entity) {
 		mapper.save(entity);
 	}
 
-	public void save(T... entities) {
+	@Override
+    public void save(T... entities) {
 		for (T entity : entities) {
 			mapper.save(entity);
 		}
 	}
 
-	public T get(Object... primaryKeyValues) {
+	@Override
+    public T get(Object... primaryKeyValues) {
 		return mapper.get(primaryKeyValues);
 	}
 
-	public T get(Object primaryKeyValue) {
+	@Override
+    public T get(Object primaryKeyValue) {
 		return mapper.get(primaryKeyValue);
 	}
 
-	public void delete(T entity) {
+    @Override
+    public List<T> getAll(Object... partitionKeyValues) {
+        // ResultSet all = mapper.getManager().getSession().execute(mapper.getQuery(primaryKeyValue));
+        // Result<T> map = mapper.map(all);
+        TableMetadata tableMetadata = mapper.getTableMetadata();
+        List<ColumnMetadata> partitionKeys = tableMetadata.getPartitionKey();
+        Select select = QueryBuilder.select().from(tableMetadata.getKeyspace().getName(), tableMetadata.getName());
+        Where where = select.where();
+        for (int i = 0; i < partitionKeyValues.length; i++) {
+
+            Clause eq = QueryBuilder.eq(partitionKeys.get(i).getName(), partitionKeyValues[i]);
+            where = where.and(eq);
+        }
+        ResultSet all = mapper.getManager().getSession().execute(where);
+        Result<T> map = mapper.map(all);
+
+        return map.all();
+    }
+
+	@Override
+    public void delete(T entity) {
 		mapper.delete(entity);
 	}
 
-	public void delete(T... entities) {
+	@Override
+    public void delete(T... entities) {
 		for (T entity : entities) {
 			mapper.delete(entity);
 		}

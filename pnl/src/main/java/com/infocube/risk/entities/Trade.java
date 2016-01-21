@@ -178,7 +178,8 @@ public class Trade {
 	
     @Override
     public String toString() {
-        return "Trade Id: " + tradeId + ", Instrument Id: " + instrumentId + ", Quantity: " + quantity;
+        return "Trade Id: " + tradeId + ", Portfolio Id: " + portfolioId + ", Instrument Id: " + instrumentId
+                + ", Quantity: " + quantity;
     }
 	
 }
