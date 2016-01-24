@@ -9,15 +9,15 @@
       var PnL = [['ID', 'PnL']];
       function drawChart() {
     		$.ajax({
-    	         url: "http://localhost:8080/RiskFrontEnd/webapi/Portfolio",
+    	         url: "http://localhost:8080/RiskFrontEnd/webapi/Portfolio/VaR/1",
     	         dataType: "json",
     	         async: false
     		}).done(function(data) {
     					data.forEach(function (arrayElem){ 
     		 			var valueToPush = new Array();
-    		 			valueToPush[0] = arrayElem.portfolioId;
-    		 			valueToPush[1] = arrayElem.portfolioId;
-    		 			PnL.push(valueToPush);
+    		 			valueToPush[0] = arrayElem.iD;
+    		 			valueToPush[1] = arrayElem.value;
+    	  	 			PnL.push(valueToPush);
     		 		        });
 
     		 		  });
