@@ -1,9 +1,9 @@
 // Builds the HTML Table out of myList.
 	
-function buildPortfolioHtmlTable(selector) {
+function buildTradesHtmlTable(selector) {
 	var temparray;
 	$.ajax({
-         url: "http://localhost:8080/RiskFrontEnd/webapi/Portfolio",
+         url: "http://localhost:8080/RiskFrontEnd/webapi/Trade/1",
          dataType: "json",
          async: false
 	}).done(function(data) {
@@ -12,11 +12,6 @@ function buildPortfolioHtmlTable(selector) {
 	 			    });
 
 	 		  });
-	var myList = $.ajax({
-        url: "http://localhost:8080/RiskFrontEnd/webapi/Portfolio",
-        dataType: "json",
-        async: false
-	}).done;
 	 
 	var columns = addAllColumnHeaders(temparray, selector);
 	for (var i = 0; i < temparray.length; i++) {
@@ -55,21 +50,3 @@ function addAllColumnHeaders(myList,selector) {
 
 	return columnSet;
 }
-// select options
-function populateSelectOptions(selector){
-$.ajax({
-    url: "http://localhost:8080/RiskFrontEnd/webapi/Portfolio",
-    dataType: "json",
-    async: false
-}).done(function(data) {
-			var dropdown = document.getElementById("selectNumber");
-			data.forEach(function (arrayElem){ 
-			var optn = document.createElement("OPTION");
-			optn.text = arrayElem.portfolioName;
-			optn.value = arrayElem.portfolioId;
-			dropdown.options.add(optn);
-		        });
-
-		  });
-}
-
