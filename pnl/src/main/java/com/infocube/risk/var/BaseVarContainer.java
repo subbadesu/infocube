@@ -2,8 +2,10 @@ package com.infocube.risk.var;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -72,7 +74,16 @@ public class BaseVarContainer implements VarContainer {
 
     @Override
     public Map<Integer, Double> getPnLVector() {
-        return pnlVector;
+        double valueToday = 0.0;
+        if (CollectionUtils.isNotEmpty(sortedPnlValues)) {
+            Optional<Double> valueTodayOptional = pnlVector.values().stream().findFirst();
+            valueToday = valueTodayOptional != null ? valueTodayOptional.get() : 0.0;
+        }
+        Map<Integer, Double> mtmAdjustedPnlVector = new HashMap<>();
+        for (Entry<Integer, Double> pnl : pnlVector.entrySet()) {
+            mtmAdjustedPnlVector.put(pnl.getKey(), pnl.getValue() - valueToday);
+        }
+        return mtmAdjustedPnlVector;
     }
 
     private void validateVaRParameters(double confidenceLevel, int day) {

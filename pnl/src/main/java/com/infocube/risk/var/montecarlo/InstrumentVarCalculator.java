@@ -174,7 +174,7 @@ public class InstrumentVarCalculator implements VarCalculator {
                     updateHistoricPrice(symbol, datePricePair, line);
                 }
             }
-        } catch (InvalidRequestException | ParseException | IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

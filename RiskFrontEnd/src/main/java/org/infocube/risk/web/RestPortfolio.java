@@ -1,6 +1,8 @@
 package org.infocube.risk.web;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.GET;
@@ -14,13 +16,14 @@ import org.infocube.risk.web.util.RiskFrontEndUtil;
 
 import com.infocube.risk.entities.Portfolio;
 import com.infocube.risk.services.PortfolioService;
+//import com.infocube.risk.services.VaRService;
 import com.infocube.risk.services.VaRService;
 
 @Path("Portfolio")
 public class RestPortfolio {
 	@GET
     @Produces(MediaType.APPLICATION_JSON)
-	public ArrayList<Portfolio> getPortfolios()
+    public List<Portfolio> getPortfolios()
 	{
 		return new PortfolioService().getPortfolios();
 		
@@ -29,7 +32,7 @@ public class RestPortfolio {
 	@GET
     @Produces(MediaType.APPLICATION_JSON)
 	@Path("/{PortfolioId}")
-	public ArrayList<Portfolio> getPortfoliosID(@PathParam("PortfolioId") int PortfolioId)
+    public List<Portfolio> getPortfoliosID(@PathParam("PortfolioId") int PortfolioId)
 	{
 		return new PortfolioService().getPortfolio(PortfolioId);
 		
@@ -37,11 +40,11 @@ public class RestPortfolio {
 	
 	@GET
     @Produces(MediaType.APPLICATION_JSON)
-	@Path("VaR/{portfolioId}")
-	public ArrayList<PnL> getVaRPortfolio(@PathParam("portfolioId") int portfolioId)
+    @Path("VaR/{PortfolioId}")
+    public ArrayList<PnL> getVaRPortfolio(@PathParam("PortfolioId") int portfolioId)
 	{
-		VaRService varService  = new VaRService();
-		Map<Integer,Double> PnLVector = varService.computePortfolioHistricalVaR(portfolioId);
+        VaRService varService = new VaRService();
+        Map<Integer, Double> PnLVector = varService.computePortfolioHistricalVaR(portfolioId);
 		return (RiskFrontEndUtil.convertoPnLObjects(PnLVector));
 	}
 

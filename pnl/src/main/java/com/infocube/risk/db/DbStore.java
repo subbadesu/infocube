@@ -44,8 +44,6 @@ public class DbStore<T> implements ObjectStore<T> {
 
     @Override
     public List<T> getAll(Object... partitionKeyValues) {
-        // ResultSet all = mapper.getManager().getSession().execute(mapper.getQuery(primaryKeyValue));
-        // Result<T> map = mapper.map(all);
         TableMetadata tableMetadata = mapper.getTableMetadata();
         List<ColumnMetadata> partitionKeys = tableMetadata.getPartitionKey();
         Select select = QueryBuilder.select().from(tableMetadata.getKeyspace().getName(), tableMetadata.getName());
@@ -55,10 +53,28 @@ public class DbStore<T> implements ObjectStore<T> {
             Clause eq = QueryBuilder.eq(partitionKeys.get(i).getName(), partitionKeyValues[i]);
             where = where.and(eq);
         }
-        ResultSet all = mapper.getManager().getSession().execute(where);
-        Result<T> map = mapper.map(all);
+        ResultSet resultSet = mapper.getManager().getSession().execute(where);
+        Result<T> mappedObjects = mapper.map(resultSet);
 
-        return map.all();
+        return mappedObjects.all();
+    }
+
+    @Override
+    public List<T> getAll() {
+        TableMetadata tableMetadata = mapper.getTableMetadata();
+        Select select = QueryBuilder.select().from(tableMetadata.getKeyspace().getName(), tableMetadata.getName());
+        ResultSet resultSet = mapper.getManager().getSession().execute(select);
+        Result<T> mappedObjects = mapper.map(resultSet);
+
+        return mappedObjects.all();
+    }
+
+    @Override
+    public List<T> getByQuery(String query) {
+        ResultSet resultSet = mapper.getManager().getSession().execute(query);
+        Result<T> mappedObjects = mapper.map(resultSet);
+
+        return mappedObjects.all();
     }
 
 	@Override

@@ -13,6 +13,7 @@ import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.Result;
 import com.infocube.risk.db.ConnectionProperties;
 import com.infocube.risk.db.DbConnection;
+import com.infocube.risk.db.DbStore;
 import com.infocube.risk.db.ObjectStore;
 import com.infocube.risk.entities.Instrument;
 import com.infocube.risk.entities.Portfolio;
@@ -24,8 +25,8 @@ public class PortfolioService implements Service {
 	private static final String DBSCHEMA_NAME = "infocube";
 	private static final String DBHOST_NAME = "localhost";
 
-	public ArrayList<Portfolio> getPortfolio(int portfolioID) {
-		ArrayList<Portfolio> portfolioList = new ArrayList<Portfolio>();
+    public List<Portfolio> getPortfolio(int portfolioID) {
+        List<Portfolio> portfolioList = new ArrayList<Portfolio>();
 		DbConnection dbConnection = new DbConnection(new ConnectionProperties());
 
 		try {
@@ -40,17 +41,11 @@ public class PortfolioService implements Service {
 		return portfolioList;
 	}
 
-	public ArrayList<Portfolio> getPortfolios() {
-		ArrayList<Portfolio> portfolioList = new ArrayList<Portfolio>();
+    public List<Portfolio> getPortfolios() {
 		DbConnection dbConnection = new DbConnection(new ConnectionProperties());
-		Session session = dbConnection.getSession();
-		MappingManager manager = new MappingManager(session);
-		ResultSet results = session.execute("SELECT * FROM inforisk_portfolio");
-		Mapper<Portfolio> mapper = manager.mapper(Portfolio.class);
-		Result<Portfolio> portfolios = mapper.map(results);
-		for (Portfolio u : portfolios) {
-			portfolioList.add(u);
-		}
+        ObjectStore<Portfolio> dbStore = dbConnection.getObjectStore(Portfolio.class);
+
+        List<Portfolio> portfolioList = dbStore.getAll();
 		dbConnection.close();
 		return portfolioList;
 
