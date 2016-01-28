@@ -46,6 +46,7 @@ public class PortfolioVarCalculator implements VarCalculator {
                 List<Trade> trades = tradeStore.getAll(portfolioId);
                 Map<Trade, Map<Integer, Double>> tradePnlVector = new HashMap<>();
                 Set<Integer> allTrials = new TreeSet<>();
+                double portfolioPriceToday = 0.0;
                 for (Trade trade : trades) {
                     // parallelize this
                     TradeVarCalculator tradeVarCalculator = new TradeVarCalculator(connection, trade);
@@ -55,6 +56,7 @@ public class PortfolioVarCalculator implements VarCalculator {
                         Map<Integer, Double> pnlVector = varContainer.getPnLVector();
                         tradePnlVector.put(trade, pnlVector);
                         allTrials.addAll(pnlVector.keySet());
+                        portfolioPriceToday += varContainer.getPriceToday();
                     }
                 }
 
@@ -74,7 +76,7 @@ public class PortfolioVarCalculator implements VarCalculator {
                         portfolioPnlVector.put(trialNum, portfolioPnl);
                     }
                 }
-                portfolioVarContainer = new BaseVarContainer(portfolioPnlVector);
+                portfolioVarContainer = new BaseVarContainer(portfolioPnlVector, portfolioPriceToday);
             }
         }
     }

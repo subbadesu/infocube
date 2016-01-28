@@ -90,10 +90,10 @@ public class InstrumentVarCalculator implements VarCalculator {
             for (Entry<LocalDate, Double> dailyReturn : dailyReturns.entrySet()) {
                 LocalDate pnlDate = dailyReturn.getKey();
                 double projectedPrice = priceToday * Math.exp(dailyReturn.getValue() * day);
-                pnlVector.put(pnlDate.getDaysSinceEpoch(), projectedPrice);
+                pnlVector.put(pnlDate.getDaysSinceEpoch(), projectedPrice - priceToday);
             }
 
-            varContainer = new BaseVarContainer(pnlVector);
+            varContainer = new BaseVarContainer(pnlVector, priceToday);
         }
     }
 

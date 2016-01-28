@@ -40,12 +40,14 @@ public class TradeVarCalculator implements VarCalculator {
                 VarCalculator varCalculator = new InstrumentVarCalculator(connection, instrument);
                 varCalculator.compute(refresh);
                 VarContainer varContainer = varCalculator.getVarContainer();
+                double instrumentPriceToday = varContainer.getPriceToday();
+                double tradePriceToday = instrumentPriceToday * trade.getQuantity();
                 Map<Integer, Double> pnLVector = varContainer.getPnLVector();
                 Map<Integer, Double> tradePnLVector = new TreeMap<>();
                 for (Entry<Integer, Double> pnl : pnLVector.entrySet()) {
                     tradePnLVector.put(pnl.getKey(), pnl.getValue() * trade.getQuantity());
                 }
-                tradeVarContainer = new BaseVarContainer(tradePnLVector);
+                tradeVarContainer = new BaseVarContainer(tradePnLVector, tradePriceToday);
             }
         }
     }

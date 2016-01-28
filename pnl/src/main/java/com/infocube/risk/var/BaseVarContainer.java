@@ -17,16 +17,18 @@ public class BaseVarContainer implements VarContainer {
     private Map<Integer, Double> pnlVector;
     private List<Double> sortedPnlValues;
     private int returnDays;
+    private double priceToday;
 
-    public BaseVarContainer(Map<Integer, Double> pnlVector, int returnDays) {
+    public BaseVarContainer(Map<Integer, Double> pnlVector, double priceToday, int returnDays) {
         this.pnlVector = pnlVector;
+        this.priceToday = priceToday;
         this.returnDays = returnDays;
         this.sortedPnlValues = new ArrayList<>(pnlVector.values());
         Collections.sort(sortedPnlValues);
     }
 
-    public BaseVarContainer(Map<Integer, Double> pnlVector) {
-        this(pnlVector, 1); // assume daily VaR by default
+    public BaseVarContainer(Map<Integer, Double> pnlVector, double priceToday) {
+        this(pnlVector, priceToday, 1); // assume daily VaR by default
     }
 
     @Override
@@ -40,11 +42,9 @@ public class BaseVarContainer implements VarContainer {
             worseValue = sortedPnlValues.get(rank);
         }
 
-        Optional<Double> valueToday = pnlVector.values().stream().findFirst();
-        maxDailyLoss = worseValue - (valueToday != null ? valueToday.get() : 0.0);
         double scalingFactor = Math.sqrt(numDays / returnDays);
 
-        double var = maxDailyLoss * scalingFactor;
+        double var = worseValue * scalingFactor;
         return Math.abs(var);
     }
 
@@ -74,16 +74,7 @@ public class BaseVarContainer implements VarContainer {
 
     @Override
     public Map<Integer, Double> getPnLVector() {
-        double valueToday = 0.0;
-        if (CollectionUtils.isNotEmpty(sortedPnlValues)) {
-            Optional<Double> valueTodayOptional = pnlVector.values().stream().findFirst();
-            valueToday = valueTodayOptional != null ? valueTodayOptional.get() : 0.0;
-        }
-        Map<Integer, Double> mtmAdjustedPnlVector = new HashMap<>();
-        for (Entry<Integer, Double> pnl : pnlVector.entrySet()) {
-            mtmAdjustedPnlVector.put(pnl.getKey(), pnl.getValue() - valueToday);
-        }
-        return mtmAdjustedPnlVector;
+        return pnlVector;
     }
 
     private void validateVaRParameters(double confidenceLevel, int day) {
@@ -95,6 +86,11 @@ public class BaseVarContainer implements VarContainer {
         if (confidenceLevel < 0.00 && confidenceLevel > 1.00) {
             throw new IllegalArgumentException("Confidence Level must be between 0 and 1 (e.g. 0.95 implies 95%");
         }
+    }
+
+    @Override
+    public double getPriceToday() {
+        return priceToday;
     }
 
 }

@@ -10,6 +10,11 @@ public interface VarContainer {
      * @return day - typically 1
      */
     int getDayFactor();
+
+    /**
+     * @return today's price
+     */
+    double getPriceToday();
     
     /**
      * @return PnL Vector

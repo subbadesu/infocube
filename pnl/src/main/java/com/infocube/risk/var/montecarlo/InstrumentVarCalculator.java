@@ -99,11 +99,11 @@ public class InstrumentVarCalculator implements VarCalculator {
                     double cumulativeProbability = random.nextDouble(); // between 0 and 1
                     double projectedPrice = priceToday * Math.exp(drift
                             + stddev * stddev * normalDistribution.inverseCumulativeProbability(cumulativeProbability));
-                    pnlVector.put(i, projectedPrice);
+                    pnlVector.put(i, projectedPrice - priceToday);
                 }
             }
 
-            varContainer = new BaseVarContainer(pnlVector);
+            varContainer = new BaseVarContainer(pnlVector, priceToday);
         }
     }
 
